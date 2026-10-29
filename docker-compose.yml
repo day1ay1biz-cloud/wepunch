@@ -1,7 +1,8 @@
 # Local development services. Production uses Fly Managed Postgres and Upstash Redis.
 services:
   postgres:
-    image: postgres:16-alpine
+    # Same major version as Neon staging.
+    image: postgres:18-alpine
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -9,7 +10,9 @@ services:
     ports:
       - "54322:5432"
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      # Postgres 18 images keep data under a versioned subdirectory, so the
+      # volume mounts one level up from the old /var/lib/postgresql/data.
+      - pgdata18:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 2s
@@ -22,4 +25,4 @@ services:
       - "63799:6379"
 
 volumes:
-  pgdata:
+  pgdata18:
