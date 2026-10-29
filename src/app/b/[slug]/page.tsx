@@ -12,6 +12,7 @@ import { DEFAULT_BRAND_COLOR } from "@/lib/program-rules";
 import { resolveTenant } from "@/lib/tenant";
 import { customerSignOutAction, joinFlowAction, joinSignedInAction } from "./actions";
 import { CardQr } from "./card-qr";
+import { LiveRefresh } from "./live-refresh";
 import { JoinForm } from "./join-form";
 
 export async function generateMetadata({ params }: PageProps<"/b/[slug]">): Promise<Metadata> {
@@ -81,6 +82,7 @@ async function Customer({ params }: { params: Promise<{ slug: string }> }) {
           </p>
         )}
         <CardQr slug={slug} />
+        <LiveRefresh slug={slug} />
         <InstallHint />
         <form action={customerSignOutAction.bind(null, slug)}>
           <button className="text-sm text-zinc-500 underline">Sign out on this device</button>

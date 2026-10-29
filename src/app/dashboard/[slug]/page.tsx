@@ -43,6 +43,14 @@ async function Dashboard({ params }: { params: Promise<{ slug: string }> }) {
           <p className="mt-1 text-sm text-zinc-500">
             Signed in as {user.name} · <span className="capitalize">{role}</span>
           </p>
+          {card && (
+            <Link
+              href={`/dashboard/${data.biz.slug}/counter`}
+              className="mt-3 inline-block rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+            >
+              Open counter
+            </Link>
+          )}
           {role === "owner" && (
             <nav className="mt-3 flex gap-4 text-sm font-medium">
               <Link href={`/dashboard/${data.biz.slug}/card`} className="underline">

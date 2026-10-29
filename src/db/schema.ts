@@ -405,6 +405,9 @@ export const punchEvent = pgTable(
     reason: text("reason"),
     // Set by the staff app so offline-queued punches are not applied twice.
     clientEventId: uuid("client_event_id").unique(),
+    // An undo is a new negative event pointing at the punch it reverses;
+    // unique, so a punch can only be undone once.
+    reversesEventId: uuid("reverses_event_id").unique(),
     createdAt: createdAt(),
   },
   (t) => [
@@ -437,6 +440,21 @@ export const reward = pgTable(
     index("reward_business_id_idx").on(t.businessId),
     index("reward_customer_id_idx").on(t.customerId),
   ],
+);
+
+// Each scanned card code can be used once per action, so a screenshot of a
+// customer's code can't collect a second punch.
+export const cardTokenUse = pgTable(
+  "card_token_use",
+  {
+    nonce: text("nonce").notNull(),
+    action: text("action", { enum: ["punch", "redeem"] }).notNull(),
+    businessId: uuid("business_id")
+      .notNull()
+      .references(() => business.id, { onDelete: "cascade" }),
+    usedAt: timestamp("used_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.nonce, t.action] })],
 );
 
 // ---------------------------------------------------------------------------

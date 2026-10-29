@@ -50,6 +50,20 @@
       "when": 1793263617240,
       "tag": "0006_customer_upsert",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793265039440,
+      "tag": "0007_punching",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793265040807,
+      "tag": "0008_punching_rls",
+      "breakpoints": true
     }
   ]
 }
