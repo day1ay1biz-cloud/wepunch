@@ -8,6 +8,7 @@ export default defineConfig({
   test: {
     environment: "node",
     globalSetup: ["./tests/global-setup.ts"],
+    setupFiles: ["./tests/setup.ts"],
     // Tests share one database.
     fileParallelism: false,
     testTimeout: 15_000,

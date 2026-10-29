@@ -291,10 +291,56 @@ export const customerConsent = pgTable(
       .references(() => business.id, { onDelete: "cascade" }),
     marketingSms: boolean("marketing_sms").notNull().default(false),
     marketingEmail: boolean("marketing_email").notNull().default(false),
+    // When each opt-in was given (TCPA: keep consent records for 4+ years).
+    marketingSmsAt: timestamp("marketing_sms_at", { withTimezone: true }),
+    marketingEmailAt: timestamp("marketing_email_at", { withTimezone: true }),
     source: text("source").notNull(),
+    ip: text("ip"),
     updatedAt: updatedAt(),
   },
   (t) => [primaryKey({ columns: [t.customerId, t.businessId] })],
+);
+
+// One-time sign-in codes for customers. Platform-wide (customers aren't
+// tied to one business), so no business_id and no RLS; only server code
+// reads it. Rows also drive rate limits, so Twilio-sent codes get a row too.
+export const customerChallenge = pgTable(
+  "customer_challenge",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    channel: text("channel", { enum: ["sms", "email"] }).notNull(),
+    destination: text("destination").notNull(),
+    // Hash of the code when we generated it; null when Twilio Verify holds it.
+    codeHash: text("code_hash"),
+    provider: text("provider", { enum: ["local", "twilio"] }).notNull(),
+    ip: text("ip"),
+    attempts: integer("attempts").notNull().default(0),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    consumedAt: timestamp("consumed_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("customer_challenge_destination_idx").on(t.destination, t.createdAt),
+    index("customer_challenge_ip_idx").on(t.ip, t.createdAt),
+  ],
+);
+
+// Signed-in customer devices. The cookie holds a random token; only its hash
+// is stored, so a database leak can't be replayed as sessions.
+export const customerSession = pgTable(
+  "customer_session",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    customerId: uuid("customer_id")
+      .notNull()
+      .references(() => customer.id, { onDelete: "cascade" }),
+    tokenHash: text("token_hash").notNull().unique(),
+    userAgent: text("user_agent"),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [index("customer_session_customer_idx").on(t.customerId)],
 );
 
 export const card = pgTable(

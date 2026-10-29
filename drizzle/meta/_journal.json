@@ -36,6 +36,20 @@
       "when": 1793262959086,
       "tag": "0004_location_archive",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793263616099,
+      "tag": "0005_customer_auth",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793263617240,
+      "tag": "0006_customer_upsert",
+      "breakpoints": true
     }
   ]
 }
