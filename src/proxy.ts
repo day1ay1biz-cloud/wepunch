@@ -29,9 +29,20 @@ async function slugForDomain(domain: string): Promise<string | null> {
 }
 
 // Streaming pages cannot change their status code once rendering starts, so
-// unknown businesses get their 404 here, before the page renders.
-function businessNotFound(request: NextRequest) {
-  return NextResponse.rewrite(new URL("/business-not-found", request.url), { status: 404 });
+// unknown businesses get their 404 here, before any page renders. The page is
+// sent directly: a rewrite to a prerendered page is served from the cache with
+// a 200 in production, whatever status the rewrite asks for.
+const NOT_FOUND_HTML = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Business not found · wepunch</title></head>
+<body style="font-family:system-ui,sans-serif;max-width:28rem;margin:0 auto;padding:4rem 1.5rem;color:#18181b">
+<h1 style="font-size:1.5rem">We couldn&#39;t find that business</h1>
+<p style="color:#52525b">Check the address on the sign or QR code and try again.</p>
+</body></html>`;
+
+function businessNotFound() {
+  return new NextResponse(NOT_FOUND_HTML, {
+    status: 404,
+    headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store" },
+  });
 }
 
 /**
@@ -50,7 +61,7 @@ export async function proxy(request: NextRequest) {
 
   const direct = pathname.match(/^\/b\/([^/]+)/);
   if (direct) {
-    return (await slugIsLive(direct[1].toLowerCase())) ? NextResponse.next() : businessNotFound(request);
+    return (await slugIsLive(direct[1].toLowerCase())) ? NextResponse.next() : businessNotFound();
   }
   if (isPlatformPath(pathname)) return NextResponse.next();
 
@@ -59,7 +70,7 @@ export async function proxy(request: NextRequest) {
   if (target.kind === "root") return NextResponse.next();
 
   const slug = target.kind === "subdomain" ? target.slug : await slugForDomain(target.domain);
-  if (!slug || !(await slugIsLive(slug))) return businessNotFound(request);
+  if (!slug || !(await slugIsLive(slug))) return businessNotFound();
 
   const url = request.nextUrl.clone();
   url.pathname = `/b/${slug}${pathname === "/" ? "" : pathname}`;
