@@ -3,6 +3,7 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { getDb } from "@/db";
 import * as schema from "@/db/schema";
+import { actionEmail, sendEmail } from "@/lib/email";
 
 // Owners, staff and platform admins sign in here. Customers use one-time
 // codes (M2) and are not Better Auth users.
@@ -25,8 +26,25 @@ function createAuth() {
     emailAndPassword: {
       enabled: true,
       minPasswordLength: 10,
-      // TODO(M1): turn on once the email provider is wired up.
-      requireEmailVerification: false,
+      requireEmailVerification: true,
+    },
+    emailVerification: {
+      sendOnSignUp: true,
+      // An unverified owner who signs in gets a fresh link.
+      sendOnSignIn: true,
+      autoSignInAfterVerification: true,
+      expiresIn: 60 * 60 * 24,
+      sendVerificationEmail: async ({ user, url }) => {
+        await sendEmail(
+          actionEmail({
+            to: user.email,
+            subject: "Confirm your email for wepunch",
+            intro: `Hi ${user.name}, confirm your email address to finish setting up your wepunch account. This link works for 24 hours.`,
+            action: "Confirm email",
+            url,
+          }),
+        );
+      },
     },
     // Tenant subdomains post to the same auth endpoints.
     trustedOrigins: [`${scheme}://*.${rootDomain}`],

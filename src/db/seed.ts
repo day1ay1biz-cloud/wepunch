@@ -12,6 +12,10 @@ import { resolveTenant } from "../lib/tenant";
 // Local-only test password for the seeded owners.
 const DEV_PASSWORD = "wepunch-dev-password";
 
+// Seeded addresses are fake: log verification emails instead of sending them,
+// then mark the owners verified so they can sign in straight away.
+delete process.env.RESEND_API_KEY;
+
 const AGENCY = { name: "Main Street Marketing" };
 
 const BUSINESSES = [
@@ -38,6 +42,7 @@ async function ensureUser(name: string, email: string): Promise<string> {
   const [existing] = await db.select({ id: user.id }).from(user).where(eq(user.email, email));
   if (existing) return existing.id;
   const res = await getAuth().api.signUpEmail({ body: { name, email, password: DEV_PASSWORD } });
+  await db.update(user).set({ emailVerified: true }).where(eq(user.id, res.user.id));
   return res.user.id;
 }
 
