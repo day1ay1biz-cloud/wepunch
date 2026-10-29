@@ -2,6 +2,8 @@ import { eq } from "drizzle-orm";
 import Link from "next/link";
 import { Suspense } from "react";
 import { signOutAction } from "@/app/(auth)/actions";
+import { PunchCard } from "@/components/punch-card";
+import { DEFAULT_BRAND_COLOR } from "@/lib/program-rules";
 import { withTenant } from "@/db";
 import { business, location, program } from "@/db/schema";
 import { requireBusinessAccess } from "@/lib/session";
@@ -28,6 +30,7 @@ async function Dashboard({ params }: { params: Promise<{ slug: string }> }) {
     programs: await tx.select().from(program).where(eq(program.businessId, businessId)),
   }));
 
+  const card = data.programs.find((p) => p.active) ?? null;
   const rootDomain = process.env.ROOT_DOMAIN ?? "localhost:3000";
   const publicPath = `/b/${data.biz.slug}`;
 
@@ -46,14 +49,47 @@ async function Dashboard({ params }: { params: Promise<{ slug: string }> }) {
         </form>
       </header>
 
-      <section className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
-        <h2 className="font-semibold">Next: design your punch card</h2>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          {data.programs.length === 0
-            ? "Choose how many punches earn a reward and what the reward is. The card designer is coming next."
-            : `${data.programs.length} card program set up.`}
-        </p>
-      </section>
+      {card ? (
+        <section className="flex flex-col gap-4 rounded-xl border border-zinc-200 p-5 sm:flex-row sm:items-center dark:border-zinc-800">
+          <PunchCard
+            businessName={data.biz.name}
+            cardName={card.name}
+            rewardText={card.rewardText}
+            punchesRequired={card.punchesRequired}
+            punches={0}
+            brandColor={data.biz.brandColor ?? DEFAULT_BRAND_COLOR}
+          />
+          <div className="flex flex-col gap-1 text-sm text-zinc-600 dark:text-zinc-400">
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Your punch card</h2>
+            <p>
+              {card.maxPunchesPerVisit === 1 ? "1 punch per visit" : `Up to ${card.maxPunchesPerVisit} punches per visit`}
+              {card.minMinutesBetween > 0 ? `, ${card.minMinutesBetween} min apart` : ""}
+            </p>
+            <p>{card.expiryDays ? `Cards expire after ${card.expiryDays} days` : "Cards never expire"}</p>
+            {card.punchOnJoin && <p>First punch free on joining</p>}
+            {role === "owner" && (
+              <Link href={`/dashboard/${data.biz.slug}/card`} className="mt-2 font-medium text-zinc-900 underline dark:text-zinc-100">
+                Edit card
+              </Link>
+            )}
+          </div>
+        </section>
+      ) : (
+        <section className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
+          <h2 className="font-semibold">Next: design your punch card</h2>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+            Choose how many punches earn a reward, what the reward is, and your card colour.
+          </p>
+          {role === "owner" && (
+            <Link
+              href={`/dashboard/${data.biz.slug}/card`}
+              className="mt-3 inline-block rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white dark:bg-zinc-100 dark:text-zinc-900"
+            >
+              Design your card
+            </Link>
+          )}
+        </section>
+      )}
 
       <section className="grid gap-4 sm:grid-cols-2">
         <div className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">

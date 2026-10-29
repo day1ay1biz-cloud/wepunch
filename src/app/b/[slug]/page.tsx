@@ -1,15 +1,18 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { PunchCard } from "@/components/punch-card";
 import { withTenant } from "@/db";
-import { business, program } from "@/db/schema";
+import { business } from "@/db/schema";
+import { getActiveProgram } from "@/lib/program";
+import { DEFAULT_BRAND_COLOR } from "@/lib/program-rules";
 import { resolveTenant } from "@/lib/tenant";
 
-// Placeholder tenant landing page. The branded join flow arrives in M2; for M0
-// it proves routing and tenant-scoped reads end to end.
+// Customer landing page for a business. Shows the card as the owner designed
+// it; joining (phone or email code) arrives in M2.
 export default function TenantHome({ params }: PageProps<"/b/[slug]">) {
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center gap-4 p-6">
+    <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center gap-6 p-6">
       <Suspense fallback={<p className="text-zinc-500">Loading…</p>}>
         <TenantCard params={params} />
       </Suspense>
@@ -19,33 +22,37 @@ export default function TenantHome({ params }: PageProps<"/b/[slug]">) {
 
 async function TenantCard({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
+  // proxy.ts already 404s unknown slugs; this guards direct renders.
   const tenant = await resolveTenant({ slug });
   if (!tenant || tenant.status === "deleted") notFound();
 
-  const data = await withTenant({ businessId: tenant.id }, async (tx) => {
-    const [biz] = await tx.select().from(business).where(eq(business.id, tenant.id));
-    const [card] = await tx
-      .select()
-      .from(program)
-      .where(and(eq(program.businessId, tenant.id), eq(program.active, true)))
-      .limit(1);
-    return { biz, card };
-  });
+  const [biz] = await withTenant({ businessId: tenant.id }, (tx) =>
+    tx.select().from(business).where(eq(business.id, tenant.id)),
+  );
+  const card = await getActiveProgram(tenant.id);
+
+  if (!card) {
+    return (
+      <div className="text-center">
+        <h1 className="text-2xl font-semibold">{biz.name}</h1>
+        <p className="mt-2 text-zinc-600 dark:text-zinc-400">This loyalty card isn&apos;t ready yet. Check back soon.</p>
+      </div>
+    );
+  }
 
   return (
-    <div
-      className="rounded-2xl p-6 text-white shadow-lg"
-      style={{ backgroundColor: data.biz.brandColor ?? "#18181b" }}
-    >
-      <h1 className="text-2xl font-semibold">{data.biz.name}</h1>
-      {data.card ? (
-        <p className="mt-2 opacity-90">
-          {data.card.name}: collect {data.card.punchesRequired} punches for{" "}
-          {data.card.rewardText.toLowerCase()}.
-        </p>
-      ) : (
-        <p className="mt-2 opacity-90">No active card yet.</p>
-      )}
-    </div>
+    <>
+      <PunchCard
+        businessName={biz.name}
+        cardName={card.name}
+        rewardText={card.rewardText}
+        punchesRequired={card.punchesRequired}
+        punches={0}
+        brandColor={biz.brandColor ?? DEFAULT_BRAND_COLOR}
+      />
+      <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
+        {card.punchOnJoin ? "Join to get your first punch free. " : ""}Joining opens soon.
+      </p>
+    </>
   );
 }
