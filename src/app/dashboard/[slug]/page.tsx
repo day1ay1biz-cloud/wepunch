@@ -51,6 +51,9 @@ async function Dashboard({ params }: { params: Promise<{ slug: string }> }) {
               <Link href={`/dashboard/${data.biz.slug}/team`} className="underline">
                 Team
               </Link>
+              <Link href={`/dashboard/${data.biz.slug}/sign`} className="underline">
+                Counter sign
+              </Link>
             </nav>
           )}
         </div>
@@ -107,9 +110,14 @@ async function Dashboard({ params }: { params: Promise<{ slug: string }> }) {
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
             {data.biz.slug}.{rootDomain}
           </p>
-          <Link href={publicPath} className="mt-2 inline-block text-sm font-medium underline">
-            Open it
-          </Link>
+          <div className="mt-2 flex gap-4 text-sm font-medium">
+            <Link href={publicPath} className="underline">
+              Open it
+            </Link>
+            <Link href={`/dashboard/${data.biz.slug}/sign`} className="underline">
+              Print counter sign
+            </Link>
+          </div>
         </div>
         <div className="rounded-xl border border-zinc-200 p-5 dark:border-zinc-800">
           <h2 className="font-semibold">Locations</h2>

@@ -24,3 +24,15 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Printing: one US Letter page, edge to edge (the counter sign sets its own margins). */
+@page {
+  size: letter;
+  margin: 0;
+}
+
+@media print {
+  body {
+    background: #fff;
+  }
+}
