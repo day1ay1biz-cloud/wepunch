@@ -14,7 +14,10 @@ export type UserScope = {
 
 /** The signed-in owner, staff member or admin, or null. */
 export async function getSession() {
-  return getAuth().api.getSession({ headers: await headers() });
+  // Read headers first: during prerendering this is where rendering stops, so
+  // the auth instance (and its database connection) is never created at build.
+  const requestHeaders = await headers();
+  return getAuth().api.getSession({ headers: requestHeaders });
 }
 
 /** The signed-in, email-verified user, or a redirect to sign-in. */
