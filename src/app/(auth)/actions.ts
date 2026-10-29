@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { getAuth } from "@/lib/auth";
+import { safeNext } from "@/lib/safe-next";
 
 export type FormState = {
   message?: string;
@@ -33,10 +34,11 @@ export async function signUpAction(_prev: FormState, form: FormData): Promise<Fo
   const values = { name: String(form.get("name") ?? ""), email: String(form.get("email") ?? "") };
   const parsed = signUpSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error), values };
+  const next = safeNext(form.get("next"));
 
   try {
     await getAuth().api.signUpEmail({
-      body: { ...parsed.data, callbackURL: "/dashboard" },
+      body: { ...parsed.data, callbackURL: next },
       headers: await headers(),
     });
   } catch (err) {
@@ -52,10 +54,11 @@ export async function signInAction(_prev: FormState, form: FormData): Promise<Fo
   const values = { email: String(form.get("email") ?? "") };
   const parsed = signInSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) return { fieldErrors: fieldErrors(parsed.error), values };
+  const next = safeNext(form.get("next"));
 
   try {
     await getAuth().api.signInEmail({
-      body: { ...parsed.data, callbackURL: "/dashboard" },
+      body: { ...parsed.data, callbackURL: next },
       headers: await headers(),
     });
   } catch (err) {
@@ -67,10 +70,11 @@ export async function signInAction(_prev: FormState, form: FormData): Promise<Fo
     }
     throw err;
   }
-  redirect("/dashboard");
+  redirect(next);
 }
 
-export async function signOutAction() {
+export async function signOutAction(form?: FormData) {
   await getAuth().api.signOut({ headers: await headers() });
-  redirect("/sign-in");
+  const next = form?.get("next");
+  redirect(next ? `/sign-in?next=${encodeURIComponent(safeNext(next))}` : "/sign-in");
 }

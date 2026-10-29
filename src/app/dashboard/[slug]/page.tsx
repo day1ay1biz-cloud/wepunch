@@ -43,6 +43,16 @@ async function Dashboard({ params }: { params: Promise<{ slug: string }> }) {
           <p className="mt-1 text-sm text-zinc-500">
             Signed in as {user.name} · <span className="capitalize">{role}</span>
           </p>
+          {role === "owner" && (
+            <nav className="mt-3 flex gap-4 text-sm font-medium">
+              <Link href={`/dashboard/${data.biz.slug}/card`} className="underline">
+                Card
+              </Link>
+              <Link href={`/dashboard/${data.biz.slug}/team`} className="underline">
+                Team
+              </Link>
+            </nav>
+          )}
         </div>
         <form action={signOutAction}>
           <button className="text-sm text-zinc-600 underline dark:text-zinc-400">Sign out</button>

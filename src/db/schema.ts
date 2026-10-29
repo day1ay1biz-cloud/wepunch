@@ -184,6 +184,35 @@ export const membership = pgTable(
   ],
 );
 
+// Pending invitation to join a business. Only a SHA-256 hash of the emailed
+// token is stored; the token itself exists only in the email link.
+export const invitation = pgTable(
+  "invitation",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    businessId: uuid("business_id")
+      .notNull()
+      .references(() => business.id, { onDelete: "cascade" }),
+    email: text("email").notNull(),
+    role: membershipRole("role").notNull().default("staff"),
+    // Empty means every location.
+    locationIds: uuid("location_ids").array().notNull().default(sql`'{}'::uuid[]`),
+    tokenHash: text("token_hash").notNull().unique(),
+    invitedBy: text("invited_by").references(() => user.id, { onDelete: "set null" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    acceptedBy: text("accepted_by").references(() => user.id, { onDelete: "set null" }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    // One open invite per address per business; re-inviting replaces it.
+    uniqueIndex("invitation_open_per_email_idx")
+      .on(t.businessId, sql`lower(${t.email})`)
+      .where(sql`${t.acceptedAt} is null and ${t.revokedAt} is null`),
+  ],
+);
+
 export const agencyMembership = pgTable(
   "agency_membership",
   {
