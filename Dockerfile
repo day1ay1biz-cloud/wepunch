@@ -20,6 +20,9 @@ FROM base AS build
 # Commit SHA, so Sentry events and source maps share one release name.
 ARG SENTRY_RELEASE
 ENV SENTRY_RELEASE=$SENTRY_RELEASE
+# Inlined into the browser bundle, so it must be known at build time.
+ARG NEXT_PUBLIC_SENTRY_ENVIRONMENT=production
+ENV NEXT_PUBLIC_SENTRY_ENVIRONMENT=$NEXT_PUBLIC_SENTRY_ENVIRONMENT
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 # The Sentry auth token is a build secret (fly deploy --build-secret

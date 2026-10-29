@@ -81,7 +81,24 @@ Next.js server (`service:web`) and the worker (`service:worker`) all go there.
 
 ## Deploying to Fly.io
 
-One-time setup (needs `flyctl` and your Fly account):
+Staging is live at https://wepunch-staging.fly.dev (app `wepunch-staging`,
+region `iad`). It runs only the `web` process group, stops when idle, and uses
+a free-tier Neon Postgres (standard Postgres, so it can move to Fly Managed
+Postgres for production unchanged). The worker and Redis are added in M2.
+Tenant subdomains need a custom domain; on `*.fly.dev` use `/b/<slug>`.
+
+Deploy staging by hand (CI does the same on every push to `main`):
+
+```bash
+flyctl deploy --app wepunch-staging --remote-only --process-groups web \
+  --build-arg SENTRY_RELEASE=$(git rev-parse HEAD) \
+  --build-arg NEXT_PUBLIC_SENTRY_ENVIRONMENT=staging \
+  --build-secret SENTRY_AUTH_TOKEN=<token>
+```
+
+Use `flyctl`, not `fly`: on this machine `fly` is Concourse CI's command.
+
+One-time setup for a new environment (needs `flyctl` and your Fly account):
 
 ```bash
 fly apps create wepunch-staging
