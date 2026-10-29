@@ -1,0 +1,41 @@
+# Staging app. Production uses the same file with: fly deploy --app wepunch-prod
+# Secrets (fly secrets set): DATABASE_URL, DATABASE_ADMIN_URL, REDIS_URL,
+# BETTER_AUTH_SECRET, BETTER_AUTH_URL, ROOT_DOMAIN
+app = "wepunch-staging"
+primary_region = "iad"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[deploy]
+  # Applies migrations as the table owner before new machines start.
+  release_command = "node dist/db/migrate.mjs"
+
+[processes]
+  web = "node_modules/.bin/next start -p 3000"
+  worker = "node dist/worker/index.mjs"
+
+[http_service]
+  internal_port = 3000
+  processes = ["web"]
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    grace_period = "10s"
+    interval = "30s"
+    method = "GET"
+    path = "/api/health"
+    timeout = "5s"
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  processes = ["web"]
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+  processes = ["worker"]

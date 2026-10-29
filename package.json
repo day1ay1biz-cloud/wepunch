@@ -1,0 +1,49 @@
+{
+  "name": "wepunch",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "build:scripts": "esbuild src/db/migrate.ts src/worker/index.ts --bundle --platform=node --format=esm --packages=external --outbase=src --outdir=dist --out-extension:.js=.mjs",
+    "start": "next start",
+    "worker": "tsx src/worker/index.ts",
+    "lint": "eslint",
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:setup": "tsx src/db/setup-dev.ts",
+    "db:seed": "tsx src/db/seed.ts"
+  },
+  "dependencies": {
+    "@sentry/nextjs": "^11.10.0",
+    "@sentry/node": "^11.10.0",
+    "better-auth": "^1.7.14",
+    "bullmq": "^6.5.1",
+    "dotenv": "^18.0.9",
+    "drizzle-orm": "^0.45.4",
+    "ioredis": "^6.0.0",
+    "next": "16.4.3",
+    "postgres": "^3.4.9",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/turbopack": "^4",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "drizzle-kit": "^0.31.11",
+    "esbuild": "^0.28.2",
+    "eslint": "^9",
+    "eslint-config-next": "16.4.3",
+    "tailwindcss": "^4",
+    "tsx": "^4.23.15",
+    "typescript": "^5",
+    "vitest": "^5.0.5"
+  },
+  "packageManager": "pnpm@10.33.0",
+  "type": "module"
+}
