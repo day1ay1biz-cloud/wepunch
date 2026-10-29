@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import Link from "next/link";
 import { Suspense } from "react";
 import { withTenant } from "@/db";
@@ -28,7 +28,7 @@ async function Team({ params }: { params: Promise<{ slug: string }> }) {
 
   const { biz, locations } = await withTenant({ businessId }, async (tx) => ({
     biz: (await tx.select({ name: business.name }).from(business).where(eq(business.id, businessId)))[0],
-    locations: await tx.select({ id: location.id, name: location.name }).from(location).where(eq(location.businessId, businessId)),
+    locations: await tx.select({ id: location.id, name: location.name }).from(location).where(and(eq(location.businessId, businessId), isNull(location.archivedAt))).orderBy(location.createdAt),
   }));
 
   const header = (

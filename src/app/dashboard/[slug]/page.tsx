@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq, isNull } from "drizzle-orm";
 import Link from "next/link";
 import { Suspense } from "react";
 import { signOutAction } from "@/app/(auth)/actions";
@@ -26,7 +26,7 @@ async function Dashboard({ params }: { params: Promise<{ slug: string }> }) {
 
   const data = await withTenant({ businessId }, async (tx) => ({
     biz: (await tx.select().from(business).where(eq(business.id, businessId)))[0],
-    locations: await tx.select().from(location).where(eq(location.businessId, businessId)),
+    locations: await tx.select().from(location).where(and(eq(location.businessId, businessId), isNull(location.archivedAt))).orderBy(location.createdAt),
     programs: await tx.select().from(program).where(eq(program.businessId, businessId)),
   }));
 
@@ -50,6 +50,9 @@ async function Dashboard({ params }: { params: Promise<{ slug: string }> }) {
               </Link>
               <Link href={`/dashboard/${data.biz.slug}/team`} className="underline">
                 Team
+              </Link>
+              <Link href={`/dashboard/${data.biz.slug}/locations`} className="underline">
+                Locations
               </Link>
               <Link href={`/dashboard/${data.biz.slug}/sign`} className="underline">
                 Counter sign
@@ -129,6 +132,11 @@ async function Dashboard({ params }: { params: Promise<{ slug: string }> }) {
               </li>
             ))}
           </ul>
+          {role === "owner" && (
+            <Link href={`/dashboard/${data.biz.slug}/locations`} className="mt-2 inline-block text-sm font-medium underline">
+              Manage locations
+            </Link>
+          )}
         </div>
       </section>
     </div>

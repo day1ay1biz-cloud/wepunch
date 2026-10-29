@@ -157,6 +157,8 @@ export const location = pgTable(
     name: text("name").notNull(),
     address: text("address"),
     timezone: text("timezone"),
+    // Archived rather than deleted, so past punches keep their location.
+    archivedAt: timestamp("archived_at", { withTimezone: true }),
     createdAt: createdAt(),
   },
   (t) => [index("location_business_id_idx").on(t.businessId)],
